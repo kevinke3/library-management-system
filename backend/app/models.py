@@ -252,6 +252,10 @@ class Fine(db.Model):
 
     loan = db.relationship("Loan", back_populates="fine")
     member = db.relationship("Member", back_populates="fines")
+    payments = db.relationship(
+        "Payment", back_populates="fine", lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self):
         return {
@@ -268,3 +272,58 @@ class Fine(db.Model):
 
     def __repr__(self):
         return f"<Fine loan={self.loan_id} {self.amount} {self.status}>"
+
+
+class Payment(db.Model):
+    """An M-Pesa (Daraja STK Push) payment attempt against a :class:`Fine`.
+
+    A payment is created in the ``pending`` state when an STK Push is initiated.
+    Daraja later calls our callback webhook which moves the row to ``success``
+    (recording the receipt number) or ``failed`` (recording the result reason).
+    """
+
+    __tablename__ = "payments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    fine_id = db.Column(db.Integer, db.ForeignKey("fines.id"), nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey("members.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False, default=0.0)
+    phone = db.Column(db.String(20), nullable=False)
+
+    # Daraja correlation identifiers returned by the STK Push request.
+    merchant_request_id = db.Column(db.String(64), nullable=True, index=True)
+    checkout_request_id = db.Column(db.String(64), nullable=True, index=True)
+
+    # One of: pending, success, failed.
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    # M-Pesa receipt number returned on a successful payment.
+    mpesa_receipt = db.Column(db.String(40), nullable=True)
+    # Human readable result description from Daraja.
+    result_desc = db.Column(db.String(255), nullable=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    fine = db.relationship("Fine", back_populates="payments")
+    member = db.relationship("Member")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "fine_id": self.fine_id,
+            "member_id": self.member_id,
+            "member_name": self.member.name if self.member else None,
+            "amount": round(self.amount, 2),
+            "phone": self.phone,
+            "checkout_request_id": self.checkout_request_id,
+            "status": self.status,
+            "mpesa_receipt": self.mpesa_receipt,
+            "result_desc": self.result_desc,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<Payment fine={self.fine_id} {self.amount} {self.status}>"

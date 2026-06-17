@@ -79,12 +79,14 @@ def _register_blueprints(app):
     from .fines.routes import fines_bp
     from .loans.routes import loans_bp
     from .members.routes import members_bp
+    from .payments.routes import payments_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(books_bp, url_prefix="/api/books")
     app.register_blueprint(members_bp, url_prefix="/api/members")
     app.register_blueprint(loans_bp, url_prefix="/api/loans")
     app.register_blueprint(fines_bp, url_prefix="/api/fines")
+    app.register_blueprint(payments_bp, url_prefix="/api/payments")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
 
     @app.route("/api/health")

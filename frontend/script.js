@@ -676,7 +676,8 @@
         <td>${fmtDate(f.created_at)}</td>
         <td>${f.status === "unpaid" && isStaff() ? `
           <div class="row-actions">
-            <button class="btn btn-sm btn-success" data-pay="${f.id}">${icon("check")} Pay</button>
+            <button class="btn btn-sm btn-success" data-mpesa="${f.id}" data-amount="${f.amount}" data-member="${escapeHtml(f.member_name)}">${icon("fine")} Pay with M-Pesa</button>
+            <button class="btn btn-sm btn-ghost" data-pay="${f.id}">Mark paid</button>
             <button class="btn btn-sm btn-ghost" data-waive="${f.id}">Waive</button>
           </div>` : "—"}</td>
       </tr>`).join("");
@@ -684,12 +685,72 @@
       <th>Member</th><th>Reason</th><th>Amount</th><th>Status</th><th>Date</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`;
 
+    body.querySelectorAll("[data-mpesa]").forEach((btn) => {
+      btn.onclick = () => payWithMpesa(btn.dataset.mpesa, btn.dataset.amount, btn.dataset.member);
+    });
     body.querySelectorAll("[data-pay]").forEach((btn) => {
       btn.onclick = async () => { await api.post(`/fines/${btn.dataset.pay}/pay`, {}); toast("Fine marked as paid.", "success"); loadFines(); };
     });
     body.querySelectorAll("[data-waive]").forEach((btn) => {
       btn.onclick = () => confirmDialog("Waive this fine?", async () => { await api.post(`/fines/${btn.dataset.waive}/waive`, {}); toast("Fine waived.", "success"); loadFines(); });
     });
+  }
+
+  /* ------------------------- M-Pesa STK Push ------------------------- */
+  // Initiate a Daraja STK Push for a fine, then poll until it settles.
+  function payWithMpesa(fineId, amount, memberName) {
+    const form = el("form", { class: "form" });
+    form.innerHTML = `
+      <p style="margin-bottom:14px;color:var(--ink-700)">
+        Send an M-Pesa payment request of <strong>${money(amount)}</strong>
+        to ${escapeHtml(memberName)}'s phone.
+      </p>
+      <label>Phone number
+        <input name="phone" placeholder="07XX XXX XXX or 2547XXXXXXXX" required />
+      </label>
+      <div class="form-error" hidden></div>
+      <div class="mpesa-status" hidden style="margin-top:6px;color:var(--ink-700)"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-cancel>Cancel</button>
+        <button type="submit" class="btn btn-success">${icon("fine")} Send STK Push</button>
+      </div>`;
+    modal.open("Pay fine with M-Pesa", form);
+
+    const statusBox = form.querySelector(".mpesa-status");
+    bindForm(form, async (data) => {
+      statusBox.hidden = false;
+      statusBox.textContent = "Sending payment request…";
+      const res = await api.post("/payments/stkpush", { fine_id: Number(fineId), phone: data.phone });
+      const checkoutId = res.data.checkout_request_id;
+      statusBox.textContent = res.customer_message
+        || "Request sent. Ask the member to enter their M-Pesa PIN on their phone.";
+      await pollMpesa(checkoutId, statusBox);
+    });
+  }
+
+  // Poll the payment status endpoint until success/failure or timeout (~90s).
+  async function pollMpesa(checkoutId, statusBox) {
+    if (!checkoutId) return;
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      let p;
+      try { p = (await api.get(`/payments/${encodeURIComponent(checkoutId)}`)).data; }
+      catch (_) { continue; }
+      if (p.status === "success") {
+        statusBox.textContent = `Payment confirmed${p.mpesa_receipt ? ` (${p.mpesa_receipt})` : ""}.`;
+        toast("Payment received. Fine settled.", "success");
+        modal.close();
+        loadFines();
+        return;
+      }
+      if (p.status === "failed") {
+        statusBox.textContent = p.result_desc || "Payment failed or was cancelled.";
+        toast("Payment was not completed.", "error");
+        return;
+      }
+      statusBox.textContent = "Waiting for the member to confirm on their phone…";
+    }
+    statusBox.textContent = "Still pending. It will update automatically once confirmed.";
   }
 
   /* ---------------------------- Reports ---------------------------- */

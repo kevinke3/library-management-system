@@ -39,6 +39,30 @@ class Config:
     # Origins allowed to call the API when the frontend is hosted separately.
     CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
 
+    # ------------------------------------------------------------------
+    # Safaricom Daraja (M-Pesa) settings.
+    #
+    # ``MPESA_ENV`` switches the base URL between the Daraja sandbox and
+    # production. Credentials come from the developer portal; the shortcode and
+    # passkey default to Safaricom's public sandbox test values so the STK Push
+    # flow can be exercised end to end without real credentials.
+    # ------------------------------------------------------------------
+    MPESA_ENV = os.environ.get("MPESA_ENV", "sandbox")
+    MPESA_CONSUMER_KEY = os.environ.get("DARAJA_CONSUMER_KEY", "")
+    MPESA_CONSUMER_SECRET = os.environ.get("DARAJA_CONSUMER_SECRET", "")
+    MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE", "174379")
+    MPESA_PASSKEY = os.environ.get(
+        "MPESA_PASSKEY",
+        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
+    )
+    # Transaction type: CustomerPayBillOnline (paybill) or CustomerBuyGoodsOnline (till).
+    MPESA_TRANSACTION_TYPE = os.environ.get(
+        "MPESA_TRANSACTION_TYPE", "CustomerPayBillOnline"
+    )
+    # Public base URL Daraja can POST the result to (e.g. an ngrok/cloudflared
+    # tunnel during development). The callback path is appended automatically.
+    MPESA_CALLBACK_BASE_URL = os.environ.get("MPESA_CALLBACK_BASE_URL", "")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
