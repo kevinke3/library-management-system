@@ -15,6 +15,10 @@ universities and public libraries.
   category and availability.
 - **Members** — patron CRUD with auto-generated membership IDs, search & status
   filtering.
+- **Bulk book import** — librarians can import many books at once from a
+  **CSV or Excel (.xlsx)** file (downloadable template provided). New ISBNs
+  create books; existing ISBNs add copies; invalid rows are skipped and reported
+  individually.
 - **Borrowing & Returns** — issue books (availability, member status and
   borrowing-limit checks), return books, automatic **overdue tracking**.
 - **Fines** — automatic **fine calculation** on overdue return, pay/waive
@@ -128,6 +132,8 @@ success or `{ "error": "...", "details": {...} }` on failure.
 | GET/POST | `/api/books` | List (search/filter) / create | auth / staff |
 | GET/PUT/DELETE | `/api/books/<id>` | Retrieve / update / delete | auth / staff |
 | GET | `/api/books/categories` | Distinct categories | auth |
+| GET | `/api/books/import/template` | Download import template (`?format=csv\|xlsx`) | staff |
+| POST | `/api/books/import` | Bulk import books from CSV/XLSX upload | staff |
 | GET/POST | `/api/members` | List (search/filter) / create | auth / staff |
 | GET/PUT/DELETE | `/api/members/<id>` | Retrieve / update / delete | auth / staff |
 | GET/POST | `/api/loans` | List (filter) / issue | auth / staff |

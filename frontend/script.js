@@ -43,6 +43,23 @@
       }
       return payload;
     },
+    async upload(path, file) {
+      // Multipart upload: let the browser set the Content-Type/boundary.
+      const data = new FormData();
+      data.append("file", file);
+      const res = await fetch(API_BASE + path, {
+        method: "POST", body: data, credentials: "include",
+      });
+      let payload = null;
+      try { payload = await res.json(); } catch (_) { payload = null; }
+      if (!res.ok) {
+        const err = new Error((payload && payload.error) || `Request failed (${res.status}).`);
+        err.status = res.status;
+        err.details = (payload && payload.details) || {};
+        throw err;
+      }
+      return payload;
+    },
     get(p) { return this.request(p); },
     post(p, body) { return this.request(p, { method: "POST", body }); },
     put(p, body) { return this.request(p, { method: "PUT", body }); },
@@ -240,6 +257,9 @@
 
     const actions = el("div", { class: "toolbar" });
     if (isStaff()) {
+      actions.appendChild(el("button", { class: "btn btn-ghost", onClick: () => openImportBooks() }, [
+        spanIcon("upload"), "Import Books",
+      ]));
       actions.appendChild(el("button", { class: "btn btn-primary", onClick: () => openBookForm() }, [
         spanIcon("plus"), "Add Book",
       ]));
@@ -369,6 +389,53 @@
       loadBooks();
     });
     modal.open(editing ? "Edit book" : "Add book", form);
+  }
+
+  // Bulk import books from a CSV/XLSX file with a downloadable template.
+  function openImportBooks() {
+    const form = el("form", { class: "form" });
+    form.innerHTML = `
+      <p style="margin-bottom:10px;color:var(--ink-700)">
+        Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with columns:
+        <code>title, author, isbn, category, publisher, published_year, total_copies</code>.
+        A row whose ISBN already exists adds its copies to that book.
+      </p>
+      <p style="margin-bottom:14px">
+        <a href="${API_BASE}/books/import/template?format=csv">Download CSV template</a>
+        &nbsp;·&nbsp;
+        <a href="${API_BASE}/books/import/template?format=xlsx">Download Excel template</a>
+      </p>
+      <label>File
+        <input name="file" type="file" accept=".csv,.xlsx" required />
+      </label>
+      <div class="form-error" hidden></div>
+      <div class="import-result" hidden style="margin-top:8px"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" data-cancel>Cancel</button>
+        <button type="submit" class="btn btn-primary">${icon("upload")} Import</button>
+      </div>`;
+    modal.open("Import books", form);
+
+    const resultBox = form.querySelector(".import-result");
+    const fileInput = form.querySelector('input[name="file"]');
+    bindForm(form, async () => {
+      const file = fileInput.files[0];
+      if (!file) throw new Error("Choose a file to import.");
+      const { data } = await api.upload("/books/import", file);
+      const lines = [
+        `<strong>${data.created}</strong> book(s) added`,
+        `<strong>${data.copies_added}</strong> copies added to existing books`,
+        `<strong>${data.skipped.length}</strong> row(s) skipped`,
+      ];
+      resultBox.hidden = false;
+      resultBox.innerHTML = lines.join(" · ") + (data.skipped.length
+        ? `<ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-700)">` +
+          data.skipped.map((s) => `<li>Row ${s.row}: ${escapeHtml(s.reason)}</li>`).join("") +
+          `</ul>`
+        : "");
+      toast(`Import complete: ${data.created} added, ${data.copies_added} copies added.`, "success");
+      loadBooks();
+    });
   }
 
   async function deleteBook(book) {
