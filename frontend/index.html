@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Management System</title>
+  <meta name="description" content="A modern library management system for books, members, loans, returns and fines." />
+
+  <!-- Outfit font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    Inline SVG icon sprite. Icons (Feather style) are referenced via
+    <svg class="icon"><use href="#icon-name"></use></svg> so the UI uses real
+    vector icons instead of emoji.
+  -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <defs>
+      <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+      <symbol id="i-loan" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+      <symbol id="i-return" viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></symbol>
+      <symbol id="i-report" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+      <symbol id="i-fine" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+      <symbol id="i-user-check" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+      <symbol id="i-library" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ============================ LOGIN VIEW ============================ -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <svg class="icon icon-lg"><use href="#i-library"></use></svg>
+        <h1>LibraryOS</h1>
+        <p>Modern Library Management System</p>
+      </div>
+      <form id="login-form" class="auth-form" autocomplete="on">
+        <label>Email
+          <input type="email" name="email" placeholder="admin@library.test" required />
+        </label>
+        <label>Password
+          <input type="password" name="password" placeholder="••••••••" required />
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" name="remember" /> <span>Keep me signed in</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+        <p id="login-error" class="form-error" hidden></p>
+      </form>
+      <div class="auth-hint">
+        <strong>Demo accounts</strong>
+        <span>admin@library.test / admin123</span>
+        <span>librarian@library.test / librarian123</span>
+        <span>member@library.test / member123</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ APP SHELL ============================ -->
+  <div id="app" class="app-shell" hidden>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <svg class="icon icon-lg"><use href="#i-library"></use></svg>
+        <span class="brand-text">LibraryOS</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-link active" data-view="dashboard"><svg class="icon"><use href="#i-dashboard"></use></svg><span class="brand-text">Dashboard</span></a>
+        <a href="#" class="nav-link" data-view="books"><svg class="icon"><use href="#i-book"></use></svg><span class="brand-text">Books</span></a>
+        <a href="#" class="nav-link" data-view="members"><svg class="icon"><use href="#i-users"></use></svg><span class="brand-text">Members</span></a>
+        <a href="#" class="nav-link" data-view="loans"><svg class="icon"><use href="#i-loan"></use></svg><span class="brand-text">Borrowing</span></a>
+        <a href="#" class="nav-link" data-view="returns"><svg class="icon"><use href="#i-return"></use></svg><span class="brand-text">Returns</span></a>
+        <a href="#" class="nav-link" data-view="fines"><svg class="icon"><use href="#i-fine"></use></svg><span class="brand-text">Fines</span></a>
+        <a href="#" class="nav-link" data-view="reports"><svg class="icon"><use href="#i-report"></use></svg><span class="brand-text">Reports</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="nav-link nav-button"><svg class="icon"><use href="#i-logout"></use></svg><span class="brand-text">Sign out</span></button>
+      </div>
+    </aside>
+
+    <!-- Main column -->
+    <div class="main">
+      <!-- Top navigation bar -->
+      <header class="topbar">
+        <button id="sidebar-toggle" class="icon-btn" aria-label="Toggle sidebar"><svg class="icon"><use href="#i-menu"></use></svg></button>
+        <h2 id="page-title">Dashboard</h2>
+        <div class="topbar-search">
+          <svg class="icon"><use href="#i-search"></use></svg>
+          <input id="global-search" type="search" placeholder="Search books, members..." />
+        </div>
+        <div class="topbar-right">
+          <button class="icon-btn" aria-label="Notifications"><svg class="icon"><use href="#i-bell"></use></svg></button>
+          <div class="user-chip">
+            <div class="avatar" id="user-avatar">A</div>
+            <div class="user-meta">
+              <span id="user-name">User</span>
+              <small id="user-role">role</small>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Routed content -->
+      <main id="view-container" class="view-container"></main>
+    </div>
+  </div>
+
+  <!-- Modal host -->
+  <div id="modal-root" class="modal-root" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h3 id="modal-title">Title</h3>
+        <button class="icon-btn" data-close-modal aria-label="Close"><svg class="icon"><use href="#i-x"></use></svg></button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast / notification host -->
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
